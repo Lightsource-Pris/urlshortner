@@ -6,24 +6,7 @@ import { CirclesWithBar } from 'react-loader-spinner'
 import axios from 'axios';
 import WOW from 'wowjs';
 import 'animate.css';
-
-function Header() {
-    return (
-        <div className='flex flex-row justify-between items-center'>
-            <Link className='text-transparent text-1xl bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 font-[600] text-[36px] cursor-pointer'>LilLink</Link>
-            <div className='flex flex-row items-center space-x-5'>
-                <div>
-                    <button className='rounded-[48px] text-white p-5 bg-[#181E29] border-[1px] border-[#353C4A] w-[123px] flex flex-row items-center space-x-3'>
-                        <span>Login</span>
-                        <img src={Login}/>
-                    </button>
-                </div>
-                <div className='hidden lg:block'><button className='rounded-[48px] bg-[#144EE3] p-5 w-[178px] text-white bg-gradient-to-r from-purple-400 to-pink-600'>Signup</button></div>
-            </div>
-        </div>
-      )
-}
-
+import Header from '../../components/header'
 function Shorten(){
 
     useEffect(() => {
@@ -53,31 +36,34 @@ function Shorten(){
     }
 
     const [error, setError] = useState()
+    const [newUrl, setNewUrl] = useState()
 
     function makeError(err){
         setError(err)
         setStarted(false)
-        setTimeout(() => removeError(),3000)
+        setTimeout(() => removeError(),5000)
     }
-
     function removeError(){
         setError(false)
     }
+    let base = process.env.REACT_APP_BASE_URL
     function callEndpoint(){
+        let url = document.getElementById('link').value
+        let name = document.getElementById('name').value
         var MyHeaders = new Headers();
         MyHeaders.append("Accept", "application/json");
         MyHeaders.append("Content-Type", "application/json");
         var settings = {
             headers: MyHeaders
         };
-        let url = "https://jekinraa.com"
-        let name = "jekinraa"
-        axios.get("https://lilapi.iaaws.com/shorten/?url="+url+"&name="+name, settings)
-        .then((res) => {
-            if(res.data.message){
-                alert('Success')
+        axios.get(base+"/shorten?unique_name="+name+"&url="+url, settings)
+        .then((response) => {
+            if(response.data.status == 200){
+                setNewUrl(response.data.new_url)
+                setStarted(0)
+                setChecks(0)
             }else{
-                makeError('Something went wrong, please try again')
+                makeError(response.data.message)
             }
         })
         .catch((e)=>{
@@ -85,10 +71,11 @@ function Shorten(){
         })  
 
     }
+    const [checks, setChecks] = useState(!started && !newUrl ? 1 : 0)
     function copy(){
         const copyContent = async () => {
             try {
-              await navigator.clipboard.writeText('https://lilapi.iaaws.com/shorten/?url={"{url}"}&name={"{name}"}');
+              await copyNew('https://lilapi.iaaws.com/shorten?url=https://examplelongurl.com&unique_name=myurl');
               alert('Endpoint copied to clipboard');
             } catch (err) {
              alert('Failed to copy: ', err);
@@ -96,12 +83,16 @@ function Shorten(){
           }
           copyContent()
     }
+
+    function copyNew (text){
+        navigator.clipboard.writeText(text)
+    }
     return (
         <div className='flex flex-col'>
             <div className='text-[30px] lg:text-[60px]'>
                 <h3 className='font-[800] text-transparent text-1xl bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 wow slideInLeft' data-wow-duration="2s">Personalize and shorten your links</h3>
             </div>
-            {!started ?
+            {checks ?
             <>
             <span className='text-[#C9CED6] mt-3'>Input your long link below and even personalize before sharing with your target audience</span>
         
@@ -126,7 +117,7 @@ function Shorten(){
             <div className='font-[600] text-[18px] text-transparent mt-5 text-1xl bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600'>Or</div>
 
             <div className='flex flex-row mx-auto items-center space-x-3 mt-5'>
-                <span className='text-[#C9CED6]' title='Click to copy'>You can also use our get endpoint in your platform: <span id="textToCopy" onClick={copy} className='cursor-pointer hover:text-pink-300'>https://lilapi.iaaws.com/shorten/?url={"{url}"}&name={"{name}"}</span></span>
+                <span className='text-[#C9CED6]' title='Click to copy'>You can also use our get endpoint in your platform: <span id="textToCopy" onClick={copy} className='cursor-pointer hover:text-pink-300'>https://lilapi.iaaws.com/shorten/?url=examplelongurl.com&unique_name=myurl</span></span>
             </div>
             </>
             :null}
@@ -146,6 +137,12 @@ function Shorten(){
                 ariaLabel='circles-with-bar-loading'
                 />
                 <span className='text-[#C9CED6] mt-3'>Cooking your new link</span>
+            </div> : null}
+
+            {newUrl ? 
+            <div className='mx-auto mt-5 flex flex-col justify-center items-center'>
+                <span className='text-[#C9CED6] mt-3'>Hurray! Your short link is ready: <span onClick={() => copyNew(newUrl)} title='Click to copy' className='text-blue-300 cursor-pointer'>{newUrl}</span></span>
+                <a href='/' className='mt-10 font-[800] text-transparent text-1xl bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 wow slideInLeft'>Shorten another</a>
             </div> : null}
  
         </div>
